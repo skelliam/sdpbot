@@ -1,0 +1,31 @@
+require 'rake'
+require 'rake/testtask'
+require 'rake/rdoctask'
+require 'spec/rake/spectask'
+
+task :default => [:spec]
+
+desc "Run all specs"
+Spec::Rake::SpecTask.new do |t|
+	t.spec_opts = ['-c', '--format specdoc']
+  	t.spec_files = FileList['spec/**/*.rb']
+end
+
+desc "Generate HTML report"
+Spec::Rake::SpecTask.new('report') do |t|
+	t.rcov = true
+	t.rcov_opts = ['--exclude', 'spec']
+  	t.spec_files = FileList['spec/**/*.rb']
+  	t.spec_opts = ["--format", "html:spec/index.html", "--diff"]
+  	t.fail_on_error = false
+end
+
+desc "Generate documentation"
+Rake::RDocTask.new('doc') { |rdoc|
+  rdoc.rdoc_dir = 'doc'
+  rdoc.title    = "SDPBot Documentation"
+  rdoc.options << '--line-numbers' << '--inline-source'
+  rdoc.main = "README"
+  rdoc.rdoc_files.include('README')
+  rdoc.rdoc_files.include('lib/**/*.rb')
+}

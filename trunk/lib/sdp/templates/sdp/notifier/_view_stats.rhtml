@@ -1,0 +1,9 @@
+<% unless view.nil? %>
+	<% begin %>
+	  <%= view.total_cost %> pts
+	<% rescue Bugzilla::View::CostMissingException => e %>
+		<%=e.partial_cost%> pts (<a href="<%=e.view.bugzilla_url%>"><%=e.view.size%> missing cost</a>) 
+	<% end %>
+	<br/>
+	(<a href="<%=view.bugzilla_url%>"><%=view.size%> items</a>)
+<% end %>

@@ -1,0 +1,128 @@
+<table border="1" cellpadding="4" cellspacing="0" style="width:100%; text-align:center;">
+	<tr style="background-color:rgb(235,235,235)">
+		<th rowspan="2">Iteration</th>
+		<th colspan="4">Plan</th>
+		<th colspan="5">Actual</th>
+		<th colspan="2">Environment</th>
+
+	</tr>
+
+	<tr style="background-color:rgb(235,235,235)">
+		<th>Duration</th>
+		<th><a href="<%=release.remaining_now.bugzilla_url%>">Remaining</a></th>
+		<th>Planned</th>
+		<th>Planned Velocity</th>
+		<th>Intake</th>
+		<th>Intake Velocity</th>
+		<th><a href="<%=release.completed_now.bugzilla_url%>">Completed</a></th>
+		<th>Team Velocity</th>
+		<th>Carried over</th>
+		<th>ASAP Completed</th>
+		<th>ASAP Remaining</th>
+	</tr>
+<% release.iterations.each {|iteration| %>
+	<tr>
+		<td>
+			<a href="<%=iteration.wiki_url%>"><%=iteration.number%></a>
+		</td>
+		
+		<td class="plan">
+			<%=iteration.start_date%><br/>
+			<%=iteration.end_date%><br/>
+			<small>(<%=iteration.length%> days)</small>
+		</td>
+		
+		<td class="plan">
+      <%= render :partial => 'view_stats', :locals => { :view => iteration.remaining_at_start } %>
+		</td>	
+
+		<td class="plan">
+      <%= render :partial => 'view_stats', :locals => { :view => iteration.planned } %>
+      <% if iteration.plan_locked?%>
+          <br/>
+        	<small>Locked on <%= iteration.plan_locked_on %></small>
+      <% end %>      
+		</td>	
+	
+    <td class="plan">
+			<%=iteration.planned_velocity.decimal(1)%>
+    </td>
+				
+		<td>
+			<% unless iteration.changed.nil? %>
+				<% begin %>
+					<%=iteration.changed_net_cost%> pts 
+				<% rescue Bugzilla::View::CostMissingException => e %>
+					<%=e.partial_cost%> pts (<a href="<%=e.view.bugzilla_url%>"><%=e.view.size%> missing cost</a>) 
+				<% end %>
+				<br/>
+      	(<a href="<%=iteration.changed.bugzilla_url%>"><%=iteration.changed.size%> items</a>)
+			<% end %>
+      <br/>
+      <small>
+			<% unless iteration.added.nil? %>
+			  [+] 
+				<% begin %>
+					<%=iteration.added.total_cost%> pts
+				<% rescue Bugzilla::View::CostMissingException => e %>
+					<%=e.partial_cost%> pts (<a href="<%=e.view.bugzilla_url%>"><%=e.view.size%> missing cost</a>) 
+				<% end %>
+				<br/>
+      	(<a href="<%=iteration.added.bugzilla_url%>"><%=iteration.added.size%> items</a>)
+			<% end %>
+      </small>
+      <br/>
+      <small>
+  			<% unless iteration.removed.nil? %>
+  			  [-] 
+  				<% begin %>
+  				  <%=iteration.removed.total_cost%> pts
+  				<% rescue Bugzilla::View::CostMissingException => e %>
+  					<%=e.partial_cost%> pts (<a href="<%=e.view.bugzilla_url%>"><%=e.view.size%> missing cost</a>) 
+  				<% end %>
+  				<br/>
+        	(<a href="<%=iteration.removed.bugzilla_url%>"><%=iteration.removed.size%> items</a>)
+  			<% end %>
+      </small>
+		</td>
+
+    <td>
+      <% unless iteration.changed_velocity == 0 %>
+      <p>
+			  <%=iteration.changed_velocity.decimal(1)%>
+			</p>
+			<% end %>
+    </td>
+    
+    <% if iteration.ended? %>
+      <td>
+      <%= render :partial => 'view_stats', :locals => { :view => iteration.completed } %>
+      </td>
+    <% else %>
+      <td class="in-progress">
+      <%= render :partial => 'view_stats', :locals => { :view => iteration.completed_now } %>
+      </td>
+    <% end %>
+
+		<td> 
+      <% unless iteration.velocity == 0 %>
+		  <p class="<%=iteration.velocity.qualify%>">
+			  <%=iteration.velocity.decimal(1)%>
+			</p>
+			<% end %>
+		</td>
+
+    <td>
+      <%= render :partial => 'view_stats', :locals => { :view => iteration.carry_over } %>
+    </td>    
+
+    <td>
+      <%= render :partial => 'view_stats', :locals => { :view => iteration.asap_completed } %>
+    </td>    
+
+    <td>
+      <%= render :partial => 'view_stats', :locals => { :view => iteration.asap_remaining_at_end } %>
+    </td>    
+	</tr>
+<% } %>
+</table>

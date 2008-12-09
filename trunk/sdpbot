@@ -1,0 +1,162 @@
+#!/usr/bin/env ruby
+$LOAD_PATH.push(File.join(File.dirname(__FILE__), "lib"))
+$LOAD_PATH.push(File.join(File.dirname(__FILE__), "vendor/ruby-cache/lib"))
+
+require 'optparse'
+require 'optparse/date'
+require 'ostruct'
+
+require 'sdp'
+
+@releases = Releases.instance
+options = OpenStruct.new
+
+begin  
+  OptionParser.new do |opts|    
+    opts.version = "0.3.0"
+    opts.banner = "Usage: #{opts.program_name} [options] "
+
+    opts.on("-t", "--track [RELEASE]", "Track release. All releases are tracked if none specified.") do |release_name|
+      options.track = true
+      options.release_name = release_name || ''
+      options.release_name = '' if release_name == 'all'
+    end
+
+    opts.on("-e", "--email [TO]", "Send email notification about all releases. Default recipient is tracking@songbirdnest.com.") do |to|
+      options.email = true
+      options.to = to || 'tracking@songbirdnest.com'
+    end
+
+    opts.on("-p", "--publish", "Update tracker page on wiki for all releases.") do |to|
+      options.publish = true
+    end
+
+    opts.on("--start START_DATE", Date, "Specify a start date (YYYY-MM-DD)") do |date|
+      options.start_date = date
+    end
+
+    opts.on("--end END_DATE", Date, "Specify an end date (YYYY-MM-DD)") do |date|
+      options.end_date = date
+    end
+
+    opts.on("--create NAME", "Create a new release. Name should match Bugzilla target milestone. Must specify a start and end dates.") do |name|
+      options.create = true
+      options.name = name
+    end
+
+    opts.on("--cost id1, id2, id3", Array, "Cost items from Bugzilla.") do |ids|
+      options.cost = true
+      options.ids = ids.collect {|id| id.to_i}
+    end
+
+    opts.on("--query bz-query-url", "Cost items from a Bugzilla query.") do |url|
+      options.query = true 
+      options.url = url
+    end
+  
+    opts.on_tail("-v", "--version", "Show version") do
+      puts "#{opts.program_name} version #{opts.version}"
+      exit
+    end
+
+    opts.on_tail("-h", "--help", "Show this message") do
+      puts opts
+      exit
+    end
+  end.parse!
+
+rescue OptionParser::MissingArgument => e
+  puts "Error: " + e
+end
+
+def load_releases
+  unless @releases.is_loaded?
+    puts "  Loading releases"      
+    @releases.load 
+  end
+end
+
+if options.track
+  puts "Tracking releases"
+  load_releases
+
+  if options.release_name.empty?
+    puts "  Tracking all releases"      
+    @releases.track_all
+  else
+    release = @releases.find(options.release_name)
+    unless release.nil?  
+      puts "  Tracking #{options.release_name} release"
+      release.track
+    else
+      puts "Error: Release #{options.release_name} is unknown"
+      exit
+    end
+  end
+  @releases.save
+end
+
+if options.email
+  puts "Sending email notification to #{options.to}"
+  load_releases
+  @releases.each {|key, release|
+    puts "  Mailing #{release.name} release tracking to #{options.to}"
+    Notifier.deliver_release_tracking(options.to, release)
+  }
+end
+
+if options.publish
+  puts "Publishing to wikis"
+  load_releases
+  puts "  Login to mediawiki"
+  wiki = MediaWiki.new
+  wiki.login
+  @releases.each {|key, release|
+#    puts "  Publishing #{release.name}"
+#    wiki.publish(release)
+  }    
+
+  puts "  Login to dekiwiki"
+  wiki = DekiWiki.new
+  wiki.login
+  @releases.each {|key, release|
+    puts "  Publishing #{release.name}"
+    wiki.publish(release)
+  }    
+end
+
+if options.create
+  unless options.start_date.nil? || options.end_date.nil?
+    puts "Creating new #{options.name} release"
+    begin
+      @releases.create(options.name, options.start_date, options.end_date)
+    rescue SDP::Releases::ReleaseExists => e
+      puts "Error: Release already exists"
+    end
+  else
+    puts "Error: Start date or end date missing for #{options.name} release"
+  end
+end
+
+if options.cost
+  puts "Computing cost for ids"
+  begin
+    puts "Total cost = #{View.from_ids(options.ids).total_cost} pts"
+  rescue View::CostMissingException => e
+    puts "Partial cost = #{e.partial_cost}"
+    puts "Cost missing for ids: #{e.view.to_query}"
+  end
+end
+
+if options.query
+  puts "Computing cost for query"
+  v = View.from_query(Query.from_s(options.url))
+  puts "  Total items: #{v.size}"
+  begin
+    puts "  Total cost = #{v.total_cost} pts"
+  rescue View::CostMissingException => e
+    puts "  Partial cost = #{e.partial_cost} pts"
+    puts "  Cost missing for #{e.view.size} items: #{e.view.to_query}"
+  end
+end
+
