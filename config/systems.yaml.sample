@@ -1,0 +1,16 @@
+bugzilla:
+  host: <your bugzilla url>
+  username: <user>
+  password: <psw>
+mediawiki:
+  host: <your media wiki url>
+  username: <user>
+  password: <psw>
+  web-username: <user for http auth>
+  web-password: <psw for http auth>
+dekiwiki:
+  host: <your dekiwiki url>
+  username: <user>
+  password: <psw>
+notifier:
+   from: <from email address>

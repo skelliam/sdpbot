@@ -1,0 +1,5 @@
+require 'bugzilla/entities/base'
+require 'bugzilla/entities/bug'
+require 'bugzilla/entities/story'
+require 'bugzilla/entities/task'
+require 'bugzilla/entities/feature'

@@ -1,0 +1,12 @@
+Bot script to automate tracking of releases.
+
++sdpbot+ is a command line utility to perform various tasks on release tracking. Try +sdpbot+ -h for usage.
+
+Requires:
+* Ruby
+* Ruby Gems:
+  * ActionMailer
+  * capistrano
+  * scrapi
+* sendmail
+* cron

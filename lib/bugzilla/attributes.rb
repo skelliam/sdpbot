@@ -1,0 +1,10 @@
+require 'bugzilla/attributes/searchable'
+require 'bugzilla/attributes/field'
+require 'bugzilla/attributes/multi_select'
+require 'bugzilla/attributes/single'
+
+require 'bugzilla/attributes/priority'
+require 'bugzilla/attributes/target_milestone'
+require 'bugzilla/attributes/status'
+require 'bugzilla/attributes/product'
+require 'bugzilla/attributes/keywords'
